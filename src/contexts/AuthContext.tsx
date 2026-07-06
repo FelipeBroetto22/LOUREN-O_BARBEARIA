@@ -83,8 +83,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = useCallback(async (credentials: LoginCredentials) => {
     setState((prev) => ({ ...prev, isLoading: true }));
     try {
-      await authService.signIn(credentials);
-      // O onAuthStateChange vai atualizar o estado
+      const data = await authService.signIn(credentials);
+      if (data.session && data.user) {
+        const profile = await authService.getProfile(data.user.id);
+        setState({
+          user: profile,
+          session: data.session,
+          isLoading: false,
+          isAuthenticated: true,
+        });
+      }
     } catch (error) {
       setState((prev) => ({ ...prev, isLoading: false }));
       throw error;
@@ -94,7 +102,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = useCallback(async (data: RegisterData) => {
     setState((prev) => ({ ...prev, isLoading: true }));
     try {
-      await authService.signUp(data);
+      const authData = await authService.signUp(data);
+      if (authData.session && authData.user) {
+        const profile = await authService.getProfile(authData.user.id);
+        setState({
+          user: profile,
+          session: authData.session,
+          isLoading: false,
+          isAuthenticated: true,
+        });
+      }
     } catch (error) {
       setState((prev) => ({ ...prev, isLoading: false }));
       throw error;

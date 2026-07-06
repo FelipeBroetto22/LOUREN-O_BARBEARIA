@@ -10,6 +10,8 @@ import {
   Image,
   TouchableOpacity,
   RefreshControl,
+  Linking,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -23,11 +25,15 @@ import { getUserStickers } from '../../src/services/albumService';
 import type { Booking } from '../../src/types/booking';
 import type { AlbumSticker } from '../../src/types/album';
 
+// Endereço da barbearia para Google Maps
+const BARBERSHOP_ADDRESS = 'Lourenço Barbearia, Brasil';
+const BARBERSHOP_MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(BARBERSHOP_ADDRESS)}`;
+
 export default function HomeScreen({ navigation }: any) {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
-  
+
   const [nextBooking, setNextBooking] = useState<Booking | null>(null);
   const [lastSticker, setLastSticker] = useState<AlbumSticker | null>(null);
 
@@ -38,7 +44,7 @@ export default function HomeScreen({ navigation }: any) {
     try {
       const [bookings, stickers] = await Promise.all([
         getUpcomingBookings(user.id),
-        getUserStickers(user.id)
+        getUserStickers(user.id),
       ]);
       setNextBooking(bookings.length > 0 ? bookings[0] : null);
       setLastSticker(stickers.length > 0 ? stickers[stickers.length - 1] : null);
@@ -57,16 +63,23 @@ export default function HomeScreen({ navigation }: any) {
     setRefreshing(false);
   };
 
+  const handleOpenMaps = async () => {
+    const canOpen = await Linking.canOpenURL(BARBERSHOP_MAPS_URL);
+    if (canOpen) {
+      await Linking.openURL(BARBERSHOP_MAPS_URL);
+    } else {
+      Alert.alert('Localização', 'Não foi possível abrir o mapa. Procure "Lourenço Barbearia" no Google Maps.');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Header
         title="LOURENÇO"
         subtitle="BARBEARIA"
-        rightAction={
-          <TouchableOpacity style={styles.notifButton}>
-            <Ionicons name="notifications-outline" size={22} color={colors.textOnPrimary} />
-          </TouchableOpacity>
-        }
+        avatarUrl={user?.avatar_url}
+        avatarInitials={user?.full_name?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() || 'LB'}
+        onAvatarPress={() => navigation.navigate('Perfil')}
       />
 
       <ScrollView
@@ -113,6 +126,13 @@ export default function HomeScreen({ navigation }: any) {
                     </Text>
                   </View>
                 </View>
+                <TouchableOpacity
+                  style={styles.viewHistoryButton}
+                  onPress={() => navigation.navigate('Historico')}
+                >
+                  <Text style={styles.viewHistoryText}>Ver todos os agendamentos</Text>
+                  <Ionicons name="arrow-forward" size={14} color="rgba(255,255,255,0.7)" />
+                </TouchableOpacity>
               </View>
             ) : (
               <View style={styles.emptyBooking}>
@@ -163,15 +183,15 @@ export default function HomeScreen({ navigation }: any) {
 
           <TouchableOpacity
             style={styles.shortcutItem}
-            onPress={() => navigation.navigate('Perfil')}
+            onPress={() => navigation.navigate('Historico')}
           >
             <View style={[styles.shortcutIcon, { backgroundColor: colors.success }]}>
-              <Ionicons name="trophy" size={24} color={colors.textOnAccent} />
+              <Ionicons name="time" size={24} color={colors.textOnAccent} />
             </View>
-            <Text style={styles.shortcutLabel}>COLEÇÃO</Text>
+            <Text style={styles.shortcutLabel}>HISTÓRICO</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.shortcutItem}>
+          <TouchableOpacity style={styles.shortcutItem} onPress={handleOpenMaps}>
             <View style={[styles.shortcutIcon, { backgroundColor: colors.warning }]}>
               <Ionicons name="location" size={24} color={colors.textOnAccent} />
             </View>
@@ -183,15 +203,20 @@ export default function HomeScreen({ navigation }: any) {
         <Text style={styles.sectionTitle}>ÚLTIMO CORTE</Text>
         <Card elevated style={styles.lastCutCard}>
           {lastSticker ? (
-            <View style={styles.lastCutContent}>
+            <TouchableOpacity
+              style={styles.lastCutContent}
+              onPress={() => navigation.navigate('Memórias')}
+              activeOpacity={0.85}
+            >
               <Image source={{ uri: lastSticker.image_url }} style={styles.lastCutImage} />
               <View style={styles.lastCutInfo}>
                 <Text style={styles.lastCutCaption} numberOfLines={1}>{lastSticker.caption}</Text>
                 <Text style={styles.lastCutDate}>
                   {new Date(lastSticker.created_at).toLocaleDateString('pt-BR')}
                 </Text>
+                <Text style={styles.lastCutCta}>Ver álbum completo →</Text>
               </View>
-            </View>
+            </TouchableOpacity>
           ) : (
             <View style={styles.lastCutEmpty}>
               <Image
@@ -224,6 +249,11 @@ export default function HomeScreen({ navigation }: any) {
             <Ionicons name="close-circle-outline" size={18} color={colors.accent} />
             <Text style={styles.infoText}>Domingo: Fechado</Text>
           </View>
+          <TouchableOpacity style={styles.mapsRow} onPress={handleOpenMaps}>
+            <Ionicons name="location-outline" size={18} color={colors.warning} />
+            <Text style={styles.mapsText}>Ver localização no mapa</Text>
+            <Ionicons name="arrow-forward" size={14} color={colors.warning} />
+          </TouchableOpacity>
         </Card>
       </ScrollView>
     </View>
@@ -316,7 +346,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   nextBookingInfo: {
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.xs,
   },
   nextBookingServiceText: {
     fontFamily: fonts.bold,
@@ -338,6 +368,18 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: fontSizes.sm,
     color: 'rgba(255,255,255,0.8)',
+  },
+  viewHistoryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: spacing.sm,
+  },
+  viewHistoryText: {
+    fontFamily: fonts.light,
+    fontSize: fontSizes.xs,
+    color: 'rgba(255,255,255,0.6)',
+    letterSpacing: 0.5,
   },
   // Section Title
   sectionTitle: {
@@ -428,6 +470,13 @@ const styles = StyleSheet.create({
     color: colors.textTertiary,
     marginTop: spacing.xs,
   },
+  lastCutCta: {
+    fontFamily: fonts.semibold,
+    fontSize: fontSizes.xs,
+    color: colors.primary,
+    marginTop: spacing.xs,
+    letterSpacing: 0.5,
+  },
   // Info Card
   infoCard: {
     marginBottom: spacing.lg,
@@ -442,5 +491,21 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: fontSizes.md,
     color: colors.textPrimary,
+  },
+  mapsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    marginTop: spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
+  },
+  mapsText: {
+    flex: 1,
+    fontFamily: fonts.semibold,
+    fontSize: fontSizes.sm,
+    color: colors.warning,
+    letterSpacing: 0.3,
   },
 });

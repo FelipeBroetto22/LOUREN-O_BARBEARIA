@@ -42,6 +42,27 @@ export async function compressAndUpload(
 }
 
 /**
+ * Comprime imagem para avatar do perfil (max 400px) e faz upload ao R2.
+ */
+export async function uploadAvatar(
+  imageUri: string,
+  userId: string
+): Promise<string> {
+  const compressed = await ImageManipulator.manipulateAsync(
+    imageUri,
+    [{ resize: { width: 400 } }],
+    { compress: 0.8, format: ImageManipulator.SaveFormat.WEBP }
+  );
+
+  const fileName = `avatars/${userId}/avatar_${Date.now()}.webp`;
+
+  const presignedUrl = await getPresignedUploadUrl(fileName, 'image/webp');
+  await uploadToR2(presignedUrl, compressed.uri, 'image/webp');
+
+  return getPublicUrl(fileName);
+}
+
+/**
  * Comprimir imagem apenas (sem upload) — útil para preview.
  */
 export async function compressImage(

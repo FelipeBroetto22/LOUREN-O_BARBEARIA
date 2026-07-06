@@ -84,3 +84,9 @@ export async function getSession() {
   if (error) throw error;
   return data.session;
 }
+
+/** Solicitar redefinição de senha por email */
+export async function resetPassword(email: string) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email);
+  if (error) throw error;
+}

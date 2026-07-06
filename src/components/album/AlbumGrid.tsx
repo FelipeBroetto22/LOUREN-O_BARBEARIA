@@ -10,6 +10,7 @@ import {
   StyleSheet,
   Dimensions,
   Image,
+  RefreshControl,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import StickerCard from './StickerCard';
@@ -31,6 +32,8 @@ interface AlbumGridProps {
   userName: string;
   totalStickers: number;
   onAddSticker?: () => void;
+  refreshing?: boolean;
+  onRefresh?: () => void;
 }
 
 export default function AlbumGrid({
@@ -38,6 +41,8 @@ export default function AlbumGrid({
   userName,
   totalStickers,
   onAddSticker,
+  refreshing = false,
+  onRefresh,
 }: AlbumGridProps) {
   const scrollRef = useRef<ScrollView>(null);
   const [currentPage, setCurrentPage] = useState(0);
@@ -88,6 +93,15 @@ export default function AlbumGrid({
         scrollEventThrottle={16}
         decelerationRate="fast"
         style={styles.pagesScroll}
+        refreshControl={
+          onRefresh ? (
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.primary}
+            />
+          ) : undefined
+        }
       >
         {pages.map((page) => (
           <View key={page.pageNumber} style={styles.page}>

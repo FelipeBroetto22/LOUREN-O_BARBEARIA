@@ -1,5 +1,6 @@
 /**
  * Root Layout — Carrega fontes, splash screen e providers globais.
+ * Roteamento por role: 'client' → ClientTabs | 'barber' → BarberTabs
  */
 import React, { useEffect, useState } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
@@ -21,15 +22,24 @@ import {
 import { AuthProvider, useAuth } from '../src/contexts/AuthContext';
 import { colors } from '../src/config/theme';
 
-// Screens
+// Auth Screens
 import LoginScreen from './(auth)/login';
 import RegisterScreen from './(auth)/register';
-import TabNavigator from './(tabs)/_layout';
+
+// Client Tab Navigator
+import ClientTabNavigator from './(tabs)/_layout';
+
+// Barber Tab Navigator
+import BarberTabNavigator from './(barber)/_layout';
+
+// Extra screens (client stack)
+import EditarPerfilScreen from './(tabs)/editar-perfil';
+import HistoricoScreen from './(tabs)/historico';
 
 const Stack = createNativeStackNavigator();
 
 function RootNavigator() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -40,14 +50,31 @@ function RootNavigator() {
   }
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
       {!isAuthenticated ? (
+        /* ── Auth Flow ─────────────────────────────────────── */
         <>
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
         </>
+      ) : user?.role === 'barber' ? (
+        /* ── Barber Flow ────────────────────────────────────── */
+        <Stack.Screen name="BarberMain" component={BarberTabNavigator} />
       ) : (
-        <Stack.Screen name="Main" component={TabNavigator} />
+        /* ── Client Flow ────────────────────────────────────── */
+        <>
+          <Stack.Screen name="Main" component={ClientTabNavigator} />
+          <Stack.Screen
+            name="EditarPerfil"
+            component={EditarPerfilScreen}
+            options={{ animation: 'slide_from_bottom' }}
+          />
+          <Stack.Screen
+            name="Historico"
+            component={HistoricoScreen}
+            options={{ animation: 'slide_from_right' }}
+          />
+        </>
       )}
     </Stack.Navigator>
   );

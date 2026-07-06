@@ -1,10 +1,11 @@
 /**
- * Header — Componente de cabeçalho com monograma da marca
+ * Header — Cabeçalho com logo, título e avatar do usuário logado
  */
 import React from 'react';
-import { View, Text, Image, StyleSheet, StatusBar } from 'react-native';
+import { View, Text, Image, StyleSheet, StatusBar, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, fonts, fontSizes, spacing } from '../../config/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, fonts, fontSizes, spacing, shadows, borderRadius } from '../../config/theme';
 
 interface HeaderProps {
   title?: string;
@@ -12,6 +13,12 @@ interface HeaderProps {
   showLogo?: boolean;
   rightAction?: React.ReactNode;
   transparent?: boolean;
+  /** URL do avatar do usuário logado — exibe no canto direito */
+  avatarUrl?: string | null;
+  /** Iniciais de fallback quando não há avatar */
+  avatarInitials?: string;
+  /** Ação ao tocar no avatar */
+  onAvatarPress?: () => void;
 }
 
 export default function Header({
@@ -20,8 +27,13 @@ export default function Header({
   showLogo = true,
   rightAction,
   transparent = false,
+  avatarUrl,
+  avatarInitials = 'LB',
+  onAvatarPress,
 }: HeaderProps) {
   const insets = useSafeAreaInsets();
+
+  const showAvatar = avatarUrl !== undefined; // prop passada explicitamente
 
   return (
     <View
@@ -48,7 +60,35 @@ export default function Header({
           </View>
         </View>
 
-        {rightAction && <View style={styles.right}>{rightAction}</View>}
+        <View style={styles.right}>
+          {/* rightAction customizado (badges, botões etc.) */}
+          {rightAction && rightAction}
+
+          {/* Avatar do usuário */}
+          {showAvatar && (
+            <TouchableOpacity
+              onPress={onAvatarPress}
+              activeOpacity={0.8}
+              disabled={!onAvatarPress}
+              style={styles.avatarWrapper}
+            >
+              {avatarUrl ? (
+                <Image
+                  source={{ uri: avatarUrl }}
+                  style={styles.avatar}
+                />
+              ) : (
+                <View style={styles.avatarFallback}>
+                  <Text style={styles.avatarInitialsText}>
+                    {avatarInitials}
+                  </Text>
+                </View>
+              )}
+              {/* Anel do avatar */}
+              <View style={styles.avatarRing} pointerEvents="none" />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     </View>
   );
@@ -71,6 +111,7 @@ const styles = StyleSheet.create({
   left: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   logo: {
     width: 36,
@@ -99,5 +140,41 @@ const styles = StyleSheet.create({
   right: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
+  },
+  // Avatar
+  avatarWrapper: {
+    position: 'relative',
+    width: 38,
+    height: 38,
+  },
+  avatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+  },
+  avatarFallback: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitialsText: {
+    fontFamily: fonts.bold,
+    fontSize: fontSizes.sm,
+    color: colors.textOnPrimary,
+    letterSpacing: 0.5,
+  },
+  avatarRing: {
+    position: 'absolute',
+    top: -1,
+    left: -1,
+    right: -1,
+    bottom: -1,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.5)',
   },
 });

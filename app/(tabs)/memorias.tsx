@@ -1,9 +1,9 @@
 /**
- * Memórias Screen — ÁLBUM DE FIGURINHAS (o diferencial do app)
+ * Memórias Screen — ÁLBUM DE FIGURINHAS
  * Design baseado no álbum da Copa do Mundo com figurinhas de cortes.
- * Layout preparado para impressão física futura (proporção 68×98mm).
+ * Caption de até 180 caracteres (descrição do corte + resenha).
  */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,8 @@ import {
   Alert,
   Modal,
   Image,
+  RefreshControl,
+  TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -20,36 +22,57 @@ import { useAuth } from '../../src/contexts/AuthContext';
 import Header from '../../src/components/ui/Header';
 import AlbumGrid from '../../src/components/album/AlbumGrid';
 import Button from '../../src/components/ui/Button';
-import Input from '../../src/components/ui/Input';
 import { organizeIntoPages, getUserStickers, addSticker } from '../../src/services/albumService';
 import { compressAndUpload } from '../../src/services/imageService';
 import { colors, fonts, fontSizes, spacing, borderRadius, shadows } from '../../src/config/theme';
 import type { AlbumSticker } from '../../src/types/album';
 
-export default function MemoriasScreen() {
+const MAX_CAPTION = 180;
+
+export default function MemoriasScreen({ navigation }: any) {
   const { user } = useAuth();
   const [stickers, setStickers] = useState<AlbumSticker[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [caption, setCaption] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  React.useEffect(() => {
-    if (user) {
-      getUserStickers(user.id)
-        .then(setStickers)
-        .catch(console.error);
+  const avatarInitials =
+    user?.full_name
+      ?.split(' ')
+      .map((n) => n[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase() || 'LB';
+
+  const loadStickers = useCallback(async () => {
+    if (!user) return;
+    try {
+      const data = await getUserStickers(user.id);
+      setStickers(data);
+    } catch (err) {
+      console.error('Erro ao carregar figurinhas:', err);
     }
   }, [user]);
 
+  useEffect(() => {
+    loadStickers();
+  }, [loadStickers]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadStickers();
+    setRefreshing(false);
+  }, [loadStickers]);
+
   const pages = organizeIntoPages(stickers);
 
-  // Selecionar foto da galeria ou câmera
   const pickImage = useCallback(async (source: 'camera' | 'gallery') => {
     const options: ImagePicker.ImagePickerOptions = {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      aspect: [3, 4], // Proporção de figurinha
+      aspect: [3, 4],
       quality: 0.9,
     };
 
@@ -76,17 +99,16 @@ export default function MemoriasScreen() {
     }
   }, []);
 
-  // Adicionar figurinha ao álbum
   const handleAddSticker = useCallback(async () => {
     if (!selectedImage || !user) return;
 
     setIsUploading(true);
     try {
       const imageUrl = await compressAndUpload(selectedImage, user.id);
-      
+
       const newSticker = await addSticker(user.id, {
         image_url: imageUrl,
-        caption: caption || 'Novo Corte',
+        caption: caption.trim() || 'Corte',
       });
 
       setStickers((prev) => [...prev, newSticker]);
@@ -100,7 +122,7 @@ export default function MemoriasScreen() {
     } finally {
       setIsUploading(false);
     }
-  }, [selectedImage, user, stickers, caption]);
+  }, [selectedImage, user, caption]);
 
   const handleOpenAddMenu = useCallback(() => {
     Alert.alert(
@@ -114,14 +136,31 @@ export default function MemoriasScreen() {
     );
   }, [pickImage]);
 
+  const handleCloseModal = () => {
+    setShowAddModal(false);
+    setSelectedImage(null);
+    setCaption('');
+  };
+
+  const captionRemaining = MAX_CAPTION - caption.length;
+  const captionColor =
+    captionRemaining < 0
+      ? colors.accent
+      : captionRemaining < 30
+      ? colors.warning
+      : colors.textTertiary;
+
   return (
     <View style={styles.container}>
       <Header
         title="MEMÓRIAS"
         subtitle="SEU ÁLBUM"
+        avatarUrl={user?.avatar_url}
+        avatarInitials={avatarInitials}
+        onAvatarPress={() => navigation?.navigate('Perfil')}
         rightAction={
           <View style={styles.headerStats}>
-            <Text style={styles.headerStatsText}>{stickers.length} figurinhas</Text>
+            <Text style={styles.headerStatsText}>{stickers.length} fig.</Text>
           </View>
         }
       />
@@ -132,6 +171,8 @@ export default function MemoriasScreen() {
         userName={user?.full_name || 'Cliente'}
         totalStickers={stickers.length}
         onAddSticker={handleOpenAddMenu}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
       />
 
       {/* FAB — Colar Figurinha */}
@@ -153,12 +194,12 @@ export default function MemoriasScreen() {
         visible={showAddModal}
         animationType="slide"
         presentationStyle="pageSheet"
-        onRequestClose={() => setShowAddModal(false)}
+        onRequestClose={handleCloseModal}
       >
         <View style={styles.modalContainer}>
           {/* Header do Modal */}
           <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => { setShowAddModal(false); setSelectedImage(null); }}>
+            <TouchableOpacity onPress={handleCloseModal}>
               <Ionicons name="close" size={24} color={colors.textPrimary} />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>COLAR FIGURINHA</Text>
@@ -193,15 +234,42 @@ export default function MemoriasScreen() {
             </View>
           )}
 
-          {/* Caption input */}
+          {/* Caption com contador de chars */}
           <View style={styles.modalForm}>
-            <Input
-              label="Descrição do Corte"
-              icon="create-outline"
-              placeholder="Ex: Degradê com barba"
-              value={caption}
-              onChangeText={setCaption}
-            />
+            <View style={styles.captionLabelRow}>
+              <Text style={styles.captionLabel}>DESCRIÇÃO DO CORTE</Text>
+              <Text style={[styles.captionCounter, { color: captionColor }]}>
+                {caption.length}/{MAX_CAPTION}
+              </Text>
+            </View>
+
+            <View style={styles.captionInputWrapper}>
+              <Ionicons
+                name="create-outline"
+                size={18}
+                color={colors.textTertiary}
+                style={styles.captionIcon}
+              />
+              <TextInput
+                style={styles.captionInput}
+                placeholder={'Ex: Degradê com barba, papo sobre futebol...\nMáximo 180 caracteres.'}
+                placeholderTextColor={colors.textTertiary}
+                value={caption}
+                onChangeText={(text) => {
+                  if (text.length <= MAX_CAPTION) setCaption(text);
+                }}
+                multiline
+                numberOfLines={4}
+                maxLength={MAX_CAPTION}
+                textAlignVertical="top"
+              />
+            </View>
+
+            {caption.length > 0 && (
+              <Text style={styles.captionHint}>
+                💡 Resenha do corte e papo ficam registrados na figurinha!
+              </Text>
+            )}
 
             <Button
               title="COLAR NO ÁLBUM"
@@ -211,6 +279,7 @@ export default function MemoriasScreen() {
               fullWidth
               size="lg"
               icon={<Ionicons name="checkmark-circle" size={20} color={colors.textOnAccent} />}
+              style={styles.saveButton}
             />
           </View>
         </View>
@@ -275,11 +344,11 @@ const styles = StyleSheet.create({
   // Preview
   previewContainer: {
     alignItems: 'center',
-    paddingVertical: spacing.lg,
+    paddingVertical: spacing.md,
   },
   previewFrame: {
-    width: 200,
-    height: 267, // 3:4 ratio
+    width: 180,
+    height: 240,
     borderRadius: 8,
     borderWidth: 3,
     borderColor: colors.stickerBorderGold,
@@ -314,9 +383,58 @@ const styles = StyleSheet.create({
     height: '50%',
   },
 
-  // Modal Form
+  // Caption
   modalForm: {
     paddingHorizontal: spacing.xl,
-    paddingTop: spacing.md,
+    paddingTop: spacing.xs,
+    flex: 1,
+  },
+  captionLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  captionLabel: {
+    fontFamily: fonts.semibold,
+    fontSize: fontSizes.sm,
+    color: colors.textSecondary,
+    letterSpacing: 1,
+  },
+  captionCounter: {
+    fontFamily: fonts.semibold,
+    fontSize: fontSizes.sm,
+  },
+  captionInputWrapper: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    borderWidth: 1.5,
+    borderColor: colors.borderLight,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    minHeight: 100,
+    alignItems: 'flex-start',
+  },
+  captionIcon: {
+    marginTop: 2,
+    marginRight: spacing.sm,
+  },
+  captionInput: {
+    flex: 1,
+    fontFamily: fonts.regular,
+    fontSize: fontSizes.md,
+    color: colors.textPrimary,
+    lineHeight: 22,
+  },
+  captionHint: {
+    fontFamily: fonts.light,
+    fontSize: fontSizes.xs,
+    color: colors.textTertiary,
+    marginTop: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  saveButton: {
+    marginTop: spacing.md,
   },
 });

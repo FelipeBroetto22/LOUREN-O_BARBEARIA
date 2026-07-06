@@ -1,5 +1,6 @@
 /**
  * Perfil Screen — Tela de perfil do usuário
+ * Todos os itens do menu conectados com ações reais.
  */
 import React from 'react';
 import {
@@ -10,6 +11,8 @@ import {
   Image,
   TouchableOpacity,
   Alert,
+  Share,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,9 +24,12 @@ import Card from '../../src/components/ui/Card';
 import Button from '../../src/components/ui/Button';
 import { colors, fonts, fontSizes, spacing, borderRadius, shadows } from '../../src/config/theme';
 
-export default function PerfilScreen() {
+// Contato da barbearia para suporte via WhatsApp
+const WHATSAPP_NUMBER = '5511999999999'; // ⚠️ Substituir pelo número real
+
+export default function PerfilScreen({ navigation }: any) {
   const { user, signOut } = useAuth();
-  
+
   const [totalCortes, setTotalCortes] = React.useState(0);
   const [totalFigurinhas, setTotalFigurinhas] = React.useState(0);
   const [meses, setMeses] = React.useState(0);
@@ -35,42 +41,101 @@ export default function PerfilScreen() {
     if (user.created_at) {
       const createdDate = new Date(user.created_at);
       const now = new Date();
-      const diffMonths = (now.getFullYear() - createdDate.getFullYear()) * 12 + (now.getMonth() - createdDate.getMonth());
+      const diffMonths =
+        (now.getFullYear() - createdDate.getFullYear()) * 12 +
+        (now.getMonth() - createdDate.getMonth());
       setMeses(Math.max(1, diffMonths));
     } else {
       setMeses(1);
     }
 
-    Promise.all([
-      getUserBookings(user.id),
-      getStickerCount(user.id)
-    ])
-    .then(([bookings, stickerCount]) => {
-      setTotalCortes(bookings.length);
-      setTotalFigurinhas(stickerCount);
-    })
-    .catch(console.error);
+    Promise.all([getUserBookings(user.id), getStickerCount(user.id)])
+      .then(([bookings, stickerCount]) => {
+        setTotalCortes(bookings.length);
+        setTotalFigurinhas(stickerCount);
+      })
+      .catch(console.error);
   }, [user]);
 
   const handleLogout = () => {
+    Alert.alert('Sair da conta', 'Tem certeza que deseja sair?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Sair', style: 'destructive', onPress: signOut },
+    ]);
+  };
+
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        title: 'Lourenço Barbearia',
+        message:
+          '✂️ Venha conhecer a Lourenço Barbearia! Agende seu corte e colecione memórias no nosso álbum digital exclusivo.',
+      });
+    } catch (error: any) {
+      console.log('Compartilhamento cancelado', error);
+    }
+  };
+
+  const handleSupport = async () => {
+    const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+      'Olá! Preciso de ajuda com o app da Lourenço Barbearia.'
+    )}`;
+    const canOpen = await Linking.canOpenURL(url);
+    if (canOpen) {
+      await Linking.openURL(url);
+    } else {
+      Alert.alert(
+        'Suporte',
+        'Entre em contato conosco pelo WhatsApp ou nos visite na barbearia.'
+      );
+    }
+  };
+
+  const handleTermos = () => {
     Alert.alert(
-      'Sair da conta',
-      'Tem certeza que deseja sair?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Sair', style: 'destructive', onPress: signOut },
-      ]
+      'Termos de Uso',
+      'Ao utilizar o aplicativo Lourenço Barbearia, você concorda com:\n\n• Uso das informações para agendamentos\n• Armazenamento de fotos no álbum de memórias\n• Comunicações sobre seus agendamentos\n\nSeus dados são protegidos e nunca compartilhados com terceiros.',
+      [{ text: 'Entendido' }]
     );
   };
 
   const menuItems = [
-    { icon: 'person-outline' as const, label: 'Editar Perfil', onPress: () => {} },
-    { icon: 'notifications-outline' as const, label: 'Notificações', onPress: () => {} },
-    { icon: 'calendar-outline' as const, label: 'Histórico de Agendamentos', onPress: () => {} },
-    { icon: 'albums-outline' as const, label: 'Meu Álbum Completo', onPress: () => {} },
-    { icon: 'share-social-outline' as const, label: 'Compartilhar App', onPress: () => {} },
-    { icon: 'help-circle-outline' as const, label: 'Ajuda & Suporte', onPress: () => {} },
-    { icon: 'document-text-outline' as const, label: 'Termos de Uso', onPress: () => {} },
+    {
+      icon: 'person-outline' as const,
+      label: 'Editar Perfil',
+      onPress: () => navigation.navigate('EditarPerfil'),
+      badge: null,
+    },
+    {
+      icon: 'calendar-outline' as const,
+      label: 'Histórico de Agendamentos',
+      onPress: () => navigation.navigate('Historico'),
+      badge: totalCortes > 0 ? String(totalCortes) : null,
+    },
+    {
+      icon: 'albums-outline' as const,
+      label: 'Meu Álbum Completo',
+      onPress: () => navigation.navigate('Memórias'),
+      badge: totalFigurinhas > 0 ? String(totalFigurinhas) : null,
+    },
+    {
+      icon: 'share-social-outline' as const,
+      label: 'Compartilhar App',
+      onPress: handleShare,
+      badge: null,
+    },
+    {
+      icon: 'logo-whatsapp' as const,
+      label: 'Ajuda & Suporte',
+      onPress: handleSupport,
+      badge: null,
+    },
+    {
+      icon: 'document-text-outline' as const,
+      label: 'Termos de Uso',
+      onPress: handleTermos,
+      badge: null,
+    },
   ];
 
   return (
@@ -95,16 +160,24 @@ export default function PerfilScreen() {
               ) : (
                 <View style={styles.avatarPlaceholder}>
                   <Text style={styles.avatarInitials}>
-                    {user?.full_name?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() || 'LB'}
+                    {user?.full_name
+                      ?.split(' ')
+                      .map((n) => n[0])
+                      .join('')
+                      .slice(0, 2)
+                      .toUpperCase() || 'LB'}
                   </Text>
                 </View>
               )}
-              <TouchableOpacity style={styles.avatarEditButton}>
+              <TouchableOpacity
+                style={styles.avatarEditButton}
+                onPress={() => navigation.navigate('EditarPerfil')}
+              >
                 <Ionicons name="camera" size={14} color={colors.textOnPrimary} />
               </TouchableOpacity>
             </View>
 
-            {/* Nome e Email */}
+            {/* Nome e Telefone */}
             <Text style={styles.userName}>{user?.full_name || 'Cliente'}</Text>
             <Text style={styles.userPhone}>{user?.phone || ''}</Text>
 
@@ -147,7 +220,14 @@ export default function PerfilScreen() {
                   </View>
                   <Text style={styles.menuItemLabel}>{item.label}</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+                <View style={styles.menuItemRight}>
+                  {item.badge !== null && (
+                    <View style={styles.badge}>
+                      <Text style={styles.badgeText}>{item.badge}</Text>
+                    </View>
+                  )}
+                  <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+                </View>
               </TouchableOpacity>
               {index < menuItems.length - 1 && <View style={styles.menuDivider} />}
             </React.Fragment>
@@ -233,7 +313,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingVertical: spacing.md, paddingHorizontal: spacing.md,
   },
-  menuItemLeft: { flexDirection: 'row', alignItems: 'center' },
+  menuItemLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  menuItemRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   menuIconContainer: {
     width: 36, height: 36, borderRadius: borderRadius.sm,
     backgroundColor: 'rgba(13,44,104,0.06)', alignItems: 'center', justifyContent: 'center',
@@ -241,6 +322,21 @@ const styles = StyleSheet.create({
   },
   menuItemLabel: { fontFamily: fonts.regular, fontSize: fontSizes.base, color: colors.textPrimary },
   menuDivider: { height: 1, backgroundColor: colors.borderLight, marginHorizontal: spacing.md },
+  badge: {
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.full,
+    minWidth: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+  },
+  badgeText: {
+    fontFamily: fonts.bold,
+    fontSize: 9,
+    color: colors.textOnPrimary,
+    letterSpacing: 0.5,
+  },
 
   // Logout
   logoutButton: { marginTop: spacing.xl },

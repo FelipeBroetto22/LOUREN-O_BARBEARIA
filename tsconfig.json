@@ -16,5 +16,7 @@
       "@/utils/*": ["src/utils/*"]
     }
   },
-  "extends": "expo/tsconfig.base"
+  "extends": "expo/tsconfig.base",
+  "exclude": ["node_modules", "supabase/functions"]
 }
+

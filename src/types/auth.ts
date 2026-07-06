@@ -1,11 +1,14 @@
 /**
  * Tipos de autenticação
  */
+export type UserRole = 'client' | 'barber';
+
 export interface UserProfile {
   id: string;
   full_name: string;
   phone: string | null;
   avatar_url: string | null;
+  role: UserRole;
   created_at: string;
 }
 

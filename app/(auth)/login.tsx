@@ -1,6 +1,6 @@
 /**
  * Login Screen — Tela de autenticação com logo completa
- * Inclui a imagem 20260626_143306_0000.png (logo-full) como destaque visual.
+ * Inclui a imagem LogoLogin.png (logo-full) como destaque visual.
  */
 import React, { useState } from 'react';
 import {
@@ -13,10 +13,12 @@ import {
   Platform,
   Alert,
   Dimensions,
+  TouchableOpacity,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../src/contexts/AuthContext';
+import * as authService from '../../src/services/authService';
 import Button from '../../src/components/ui/Button';
 import Input from '../../src/components/ui/Input';
 import { colors, fonts, fontSizes, spacing, borderRadius } from '../../src/config/theme';
@@ -46,7 +48,24 @@ export default function LoginScreen({ navigation }: any) {
     try {
       await signIn({ email: email.trim(), password });
     } catch (error: any) {
-      Alert.alert('Erro ao entrar', error.message || 'Verifique suas credenciais.');
+      if (error.message?.includes('Invalid login credentials') || error.status === 400) {
+        Alert.alert('Falha no login', 'Email ou senha incorreta.');
+      } else {
+        Alert.alert('Erro ao entrar', error.message || 'Verifique suas credenciais.');
+      }
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email.trim() || !email.includes('@')) {
+      Alert.alert('Atenção', 'Por favor, digite seu email no campo acima e toque novamente em "Esqueci minha senha".');
+      return;
+    }
+    try {
+      await authService.resetPassword(email.trim());
+      Alert.alert('Email enviado!', 'Verifique sua caixa de entrada para redefinir a senha.');
+    } catch (error: any) {
+      Alert.alert('Erro', error.message || 'Não foi possível enviar o email de redefinição.');
     }
   };
 
@@ -103,6 +122,10 @@ export default function LoginScreen({ navigation }: any) {
             onChangeText={setPassword}
             error={errors.password}
           />
+
+          <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotPasswordContainer}>
+            <Text style={styles.forgotPasswordText}>Esqueci minha senha</Text>
+          </TouchableOpacity>
 
           <Button
             title="ENTRAR"
@@ -192,12 +215,21 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
     lineHeight: 20,
   },
-  // Form Section
   formSection: {
     marginTop: spacing.md,
   },
+  forgotPasswordContainer: {
+    alignSelf: 'flex-end',
+    marginBottom: spacing.md,
+    marginTop: -spacing.sm,
+  },
+  forgotPasswordText: {
+    fontFamily: fonts.medium,
+    fontSize: fontSizes.sm,
+    color: colors.primary,
+  },
   loginButton: {
-    marginTop: spacing.sm,
+    marginTop: spacing.xs,
   },
   // Divider
   divider: {
