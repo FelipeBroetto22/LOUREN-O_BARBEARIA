@@ -117,7 +117,6 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     marginRight: spacing.sm,
-    tintColor: colors.textOnPrimary,
   },
   titleContainer: {
     justifyContent: 'center',

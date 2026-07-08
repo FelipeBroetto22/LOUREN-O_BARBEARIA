@@ -10,6 +10,8 @@ import {
   StyleSheet,
   Image,
   RefreshControl,
+  FlatList,
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import StickerCard from './StickerCard';
@@ -23,6 +25,8 @@ import {
   shadows,
 } from '../../config/theme';
 import type { AlbumPageData } from '../../types/album';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface AlbumGridProps {
   pages: AlbumPageData[];
@@ -40,27 +44,11 @@ export default function AlbumGrid({
   refreshing = false,
   onRefresh,
 }: AlbumGridProps) {
-  // Como agora é uma página única, pegamos os slots da primeira página
-  const slots = pages[0]?.slots || [];
-
-  // Calcular progresso
-  const totalSlots = 100;
-  const progressPercent = (totalStickers / totalSlots) * 100;
-
   return (
     <View style={styles.container}>
-      {/* Header Fixo Azul */}
-      <View style={styles.header}>
-        <Ionicons name="menu" size={28} color="#fff" style={styles.menuIcon} />
-        <Image
-          source={require('../../../assets/images/logo-icon.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-        <Text style={styles.title}>ÁLBUM DE MEMÓRIAS</Text>
-      </View>
 
       <ScrollView
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         refreshControl={
@@ -73,48 +61,59 @@ export default function AlbumGrid({
           ) : undefined
         }
       >
-        {/* Card de Progresso */}
-        <View style={styles.progressCard}>
-          <View style={styles.progressHeader}>
-            <Text style={styles.progressText}>
-              <Text style={styles.progressLabel}>COLECIONADOS: </Text>
-              <Text style={styles.progressValue}>{totalStickers}</Text>
-              <Text style={styles.progressTotal}> / {totalSlots}</Text>
-            </Text>
-            <View style={styles.newBadge}>
-              <Ionicons name="alert-circle" size={14} color={colors.accent} />
-              <Text style={styles.newBadgeText}> Novas Figurinhas</Text>
-            </View>
-          </View>
+        {pages.map((page) => {
+          const slots = page.slots;
+          const yearStickersCount = slots.filter((s) => s.sticker).length;
+          const currentTotalSlots = slots.length;
+          const progressPercent = (yearStickersCount / currentTotalSlots) * 100;
+          const firstEmptySlotIndex = slots.findIndex((s) => !s.sticker);
 
-          <View style={styles.progressBarBg}>
-            <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
-          </View>
-        </View>
+          return (
+            <View key={page.pageNumber} style={styles.pageContainer}>
+              {/* Card de Progresso */}
+              <View style={styles.progressCard}>
+                <View style={styles.progressHeader}>
+                  <Text style={styles.progressText}>
+                    <Text style={styles.progressLabel}>COLECIONADOS EM {page.pageNumber}: </Text>
+                    <Text style={styles.progressValue}>{yearStickersCount}</Text>
+                    <Text style={styles.progressTotal}> / {currentTotalSlots}</Text>
+                  </Text>
+                  {yearStickersCount > 0 && (
+                    <View style={styles.newBadge}>
+                      <Ionicons name="star" size={14} color={colors.accent} />
+                    </View>
+                  )}
+                </View>
 
-        {/* Grade de Figurinhas */}
-        <View style={styles.gridContainer}>
-          <View style={styles.grid}>
-            {slots.map((slot) => (
-              <View key={slot.slotIndex}>
-                {slot.sticker ? (
-                  <StickerCard sticker={slot.sticker} />
-                ) : (
-                  <StickerSlot
-                    slotNumber={slot.slotIndex + 1}
-                    // Apenas permitir adicionar na próxima figurinha vazia (a primeira disponível)
-                    // Mas para simplificar, se onAddSticker foi passado, o botão pode ser a primeira vazia
-                    onPress={
-                      onAddSticker && slot.slotIndex === totalStickers
-                        ? onAddSticker
-                        : undefined
-                    }
-                  />
-                )}
+                <View style={styles.progressBarBg}>
+                  <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
+                </View>
               </View>
-            ))}
-          </View>
-        </View>
+
+              {/* Grade de Figurinhas */}
+              <View style={styles.gridContainer}>
+                <View style={styles.grid}>
+                  {slots.map((slot) => (
+                    <View key={slot.slotIndex}>
+                      {slot.sticker ? (
+                        <StickerCard sticker={slot.sticker} />
+                      ) : (
+                        <StickerSlot
+                          slotNumber={slot.slotIndex + 1}
+                          onPress={
+                            onAddSticker && slot.slotIndex === firstEmptySlotIndex
+                              ? onAddSticker
+                              : undefined
+                          }
+                        />
+                      )}
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </View>
+          );
+        })}
       </ScrollView>
     </View>
   );
@@ -124,38 +123,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.primary, // Fundo atrás do scroll é azul
-  },
-  header: {
-    alignItems: 'center',
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.sm,
-    backgroundColor: colors.primary,
-  },
-  menuIcon: {
-    position: 'absolute',
-    left: spacing.md,
-    top: spacing.xl + 10,
-  },
-  logo: {
-    width: 60,
-    height: 60,
-    tintColor: '#D4C5A9', // Cor dourada do logo
-  },
-  title: {
-    fontFamily: fonts.bold,
-    fontSize: fontSizes.xl,
-    color: '#D4C5A9',
-    marginTop: spacing.xs,
-    letterSpacing: 1,
+    paddingTop: spacing.md, // Pequeno espaçamento do topo
   },
   scrollContent: {
     backgroundColor: '#FAF7F2', // Fundo creme do álbum
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     paddingHorizontal: stickerDimensions.pagePadding,
-    paddingTop: spacing.md,
-    paddingBottom: spacing['2xl'],
-    minHeight: '100%', // Preenche a tela
+    paddingTop: spacing.lg,
+    paddingBottom: spacing['3xl'] + spacing.xl, // Espaço extra para a tab bar
+    flexGrow: 1,
+  },
+  pageContainer: {
+    marginBottom: spacing.xl,
   },
   progressCard: {
     backgroundColor: '#F3EFE7', // Fundo do card

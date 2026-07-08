@@ -66,23 +66,45 @@ export async function removeSticker(stickerId: string): Promise<void> {
   if (error) throw error;
 }
 
-/** Organizar figurinhas em grade de 100 posições do álbum */
+/** Organizar figurinhas por ano (cresce dinamicamente de 10 em 10) */
 export function organizeIntoPages(stickers: AlbumSticker[]): AlbumPageData[] {
-  const totalSlots = 100;
-  const slots: AlbumSlot[] = [];
-
-  for (let i = 0; i < totalSlots; i++) {
-    const stickerNumber = i + 1;
-    const sticker = stickers.find((s) => s.sticker_number === stickerNumber) || null;
-
-    slots.push({
-      slotIndex: i,
-      pageNumber: 1,
-      sticker,
-    });
+  // Extrair anos (garantir pelo menos o ano atual)
+  const years = Array.from(new Set(stickers.map(s => {
+    const date = new Date(s.taken_at || s.created_at);
+    return date.getFullYear();
+  }))).sort((a, b) => a - b);
+  
+  if (years.length === 0) {
+    years.push(new Date().getFullYear());
   }
+  
+  const pages: AlbumPageData[] = [];
+  
+  years.forEach(year => {
+    const yearStickers = stickers.filter(s => {
+      const date = new Date(s.taken_at || s.created_at);
+      return date.getFullYear() === year;
+    });
+    
+    // Começa com 10 slots. Se encher, cresce para 20, 30, etc.
+    // O +1 garante que, ao chegar em 10 figurinhas, ele já pule para 20 slots para ter espaço vazio.
+    const totalSlotsForThisYear = Math.max(10, Math.ceil((yearStickers.length + 1) / 10) * 10);
+    
+    const slots: AlbumSlot[] = [];
+    
+    for (let i = 0; i < totalSlotsForThisYear; i++) {
+      const sticker = yearStickers[i] || null;
+      slots.push({
+        slotIndex: i,
+        pageNumber: year, // Usamos o ano como número da página
+        sticker,
+      });
+    }
+    
+    pages.push({ pageNumber: year, slots });
+  });
 
-  return [{ pageNumber: 1, slots }];
+  return pages;
 }
 
 /** Contar total de figurinhas do usuário */

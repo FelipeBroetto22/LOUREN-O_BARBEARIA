@@ -57,7 +57,7 @@ export default function StickerCard({ sticker, onPress }: StickerCardProps) {
 
         {/* Selo/Ribbon vermelho no canto */}
         <View style={styles.seal}>
-          <Ionicons name="ribbon" size={14} color={colors.accent} style={styles.sealIcon} />
+          <Ionicons name="ribbon" size={22} color={colors.accent} style={styles.sealIcon} />
         </View>
       </View>
     </View>
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
   },
   numberText: {
     fontFamily: fonts.bold,
-    fontSize: 8,
+    fontSize: 14,
     color: '#000',
   },
   labelContainer: {
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   },
   labelText: {
     fontFamily: fonts.bold,
-    fontSize: 6,
+    fontSize: 10,
     color: '#1A1A1A',
   },
   seal: {

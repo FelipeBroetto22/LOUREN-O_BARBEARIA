@@ -35,7 +35,7 @@ export default function StickerSlot({ slotNumber, onPress }: StickerSlotProps) {
 
         {isActionable ? (
           <View style={styles.centerAction}>
-            <Ionicons name="add" size={20} color={colors.accent} />
+            <Ionicons name="add" size={28} color={colors.accent} />
             <Text style={styles.addText}>ADICIONAR</Text>
             <Text style={styles.addText}>FOTO</Text>
           </View>
@@ -88,10 +88,10 @@ const styles = StyleSheet.create({
   },
   numberText: {
     position: 'absolute',
-    top: 4,
-    right: 4,
+    top: 6,
+    right: 6,
     fontFamily: fonts.bold,
-    fontSize: 9,
+    fontSize: 16,
     color: colors.primary,
   },
   centerAction: {
@@ -101,10 +101,10 @@ const styles = StyleSheet.create({
   },
   addText: {
     fontFamily: fonts.bold,
-    fontSize: 7,
+    fontSize: 10,
     color: colors.accent,
     textAlign: 'center',
-    marginTop: 1,
+    marginTop: 2,
   },
   pillContainer: {
     position: 'absolute',
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
   },
   pillText: {
     fontFamily: fonts.bold,
-    fontSize: 7,
+    fontSize: 10,
     color: colors.surface,
   },
 });
