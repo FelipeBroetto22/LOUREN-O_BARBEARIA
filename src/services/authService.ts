@@ -72,9 +72,26 @@ export async function updateProfile(
     .update(updates)
     .eq('id', userId)
     .select()
-    .single();
+    .maybeSingle(); // Evita erro 406 (PGRST116) se retornar 0 linhas
 
   if (error) throw error;
+
+  // Se não atualizou nada, o perfil não existe na tabela 'profiles'. Vamos criá-lo.
+  if (!data) {
+    const { data: insertData, error: insertError } = await supabase
+      .from('profiles')
+      .insert({
+        id: userId,
+        full_name: updates.full_name || 'Usuário Sem Nome',
+        ...updates,
+      })
+      .select()
+      .single();
+
+    if (insertError) throw insertError;
+    return insertData;
+  }
+
   return data;
 }
 

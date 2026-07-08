@@ -98,7 +98,8 @@ export default function EditarPerfilScreen({ navigation }: any) {
       await updateProfile(user.id, { avatar_url: publicUrl });
       await refreshProfile();
     } catch (error: any) {
-      Alert.alert('Erro', `Falha ao enviar foto: ${error.message}`);
+      const errorMsg = error?.message || JSON.stringify(error);
+      Alert.alert('Erro no Avatar', `Falha ao enviar foto:\\n${errorMsg}`);
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -117,7 +118,8 @@ export default function EditarPerfilScreen({ navigation }: any) {
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Não foi possível salvar as alterações.');
+      const errorMsg = error?.message || JSON.stringify(error);
+      Alert.alert('Erro no Perfil', `Não foi possível salvar:\\n${errorMsg}`);
     } finally {
       setIsSaving(false);
     }

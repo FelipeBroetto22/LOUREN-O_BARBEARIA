@@ -105,6 +105,10 @@ export default function AgendarScreen({ navigation }: any) {
   const isSlotUnavailable = (time: string) =>
     bookedSlots.includes(time) || blockedSlots.includes(time);
 
+  // Sábado: apenas até 18:00 conforme horário de funcionamento
+  const SATURDAY_TIME_SLOTS = ALL_TIME_SLOTS.filter((t) => t < '18:00');
+  const availableTimeSlots = selectedDate?.getDay() === 6 ? SATURDAY_TIME_SLOTS : ALL_TIME_SLOTS;
+
   const handleConfirm = async () => {
     if (!user || !selectedBarber || !selectedService || !selectedDate || !selectedTime) return;
 
@@ -406,7 +410,7 @@ export default function AgendarScreen({ navigation }: any) {
                       </View>
                     </View>
                     <View style={styles.timeGrid}>
-                      {ALL_TIME_SLOTS.map((time) => {
+                      {availableTimeSlots.map((time) => {
                         const isSelected = selectedTime === time;
                         const isUnavailable = isSlotUnavailable(time);
                         return (

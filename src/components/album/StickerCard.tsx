@@ -1,6 +1,5 @@
 /**
- * StickerCard — Figurinha preenchida do álbum (estilo Panini)
- * Renderiza a foto do corte com moldura, número, e dados do serviço.
+ * StickerCard — Figurinha preenchida do álbum
  */
 import React from 'react';
 import {
@@ -10,12 +9,11 @@ import {
   StyleSheet,
   Dimensions,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import {
   colors,
   fonts,
   fontSizes,
-  spacing,
   stickerDimensions,
   shadows,
 } from '../../config/theme';
@@ -23,7 +21,7 @@ import type { AlbumSticker } from '../../types/album';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const STICKER_WIDTH =
-  (SCREEN_WIDTH - stickerDimensions.pagePadding * 2 - stickerDimensions.gap) / stickerDimensions.columns;
+  (SCREEN_WIDTH - stickerDimensions.pagePadding * 2 - (stickerDimensions.columns - 1) * stickerDimensions.gap) / stickerDimensions.columns;
 const STICKER_HEIGHT = STICKER_WIDTH / stickerDimensions.aspectRatio;
 
 interface StickerCardProps {
@@ -32,23 +30,10 @@ interface StickerCardProps {
 }
 
 export default function StickerCard({ sticker, onPress }: StickerCardProps) {
-  const formattedDate = new Date(sticker.taken_at).toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-
+  // O reference design mostra um selo vermelho na figurinha, vamos simulá-lo
   return (
-    <View style={[styles.container, shadows.md]}>
-      {/* Moldura externa (borda dourada/creme) */}
+    <View style={[styles.container, shadows.sm]}>
       <View style={styles.frame}>
-        {/* Número da figurinha */}
-        <View style={styles.numberBadge}>
-          <Text style={styles.numberText}>
-            #{String(sticker.sticker_number).padStart(2, '0')}
-          </Text>
-        </View>
-
         {/* Foto do corte */}
         <Image
           source={{ uri: sticker.image_url }}
@@ -56,24 +41,24 @@ export default function StickerCard({ sticker, onPress }: StickerCardProps) {
           resizeMode="cover"
         />
 
-        {/* Barra inferior com info */}
-        <LinearGradient
-          colors={['transparent', 'rgba(13, 44, 104, 0.95)']}
-          style={styles.infoBar}
-        >
-          <Text style={styles.caption} numberOfLines={1}>
-            {sticker.caption || 'Corte'}
+        {/* Número da figurinha (top right) */}
+        <View style={styles.numberBadge}>
+          <Text style={styles.numberText}>
+            {String(sticker.sticker_number).padStart(2, '0')}
           </Text>
-          <Text style={styles.date}>{formattedDate}</Text>
-        </LinearGradient>
+        </View>
 
-        {/* Brilho sutil no canto (efeito de figurinha holográfica) */}
-        <LinearGradient
-          colors={['rgba(255,255,255,0.15)', 'transparent']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.shine}
-        />
+        {/* Faixa branca na base */}
+        <View style={styles.labelContainer}>
+          <Text style={styles.labelText} numberOfLines={1}>
+            Classic Cut
+          </Text>
+        </View>
+
+        {/* Selo/Ribbon vermelho no canto */}
+        <View style={styles.seal}>
+          <Ionicons name="ribbon" size={14} color={colors.accent} style={styles.sealIcon} />
+        </View>
       </View>
     </View>
   );
@@ -87,61 +72,58 @@ const styles = StyleSheet.create({
   },
   frame: {
     flex: 1,
-    borderRadius: 6,
-    borderWidth: 2.5,
-    borderColor: colors.stickerBorder,
-    backgroundColor: colors.albumBg,
-    overflow: 'hidden',
-  },
-  numberBadge: {
-    position: 'absolute',
-    top: 6,
-    left: 6,
-    backgroundColor: colors.primary,
     borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    zIndex: 10,
-  },
-  numberText: {
-    fontFamily: fonts.bold,
-    fontSize: fontSizes.xs,
-    color: colors.textOnPrimary,
-    letterSpacing: 0.5,
+    borderWidth: 1,
+    borderColor: '#D4C5A9',
+    backgroundColor: '#fff',
+    overflow: 'hidden',
   },
   photo: {
     width: '100%',
     height: '100%',
   },
-  infoBar: {
+  numberBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: 'rgba(255,249,235,0.85)',
+    borderRadius: 2,
+    paddingHorizontal: 3,
+    paddingVertical: 1,
+    zIndex: 10,
+  },
+  numberText: {
+    fontFamily: fonts.bold,
+    fontSize: 8,
+    color: '#000',
+  },
+  labelContainer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: 8,
-    paddingBottom: 6,
-    paddingTop: 24,
+    backgroundColor: '#F9F7F3',
+    paddingVertical: 3,
+    paddingHorizontal: 4,
+    alignItems: 'flex-start',
+    borderTopWidth: 1,
+    borderTopColor: '#D4C5A9',
   },
-  caption: {
-    fontFamily: fonts.semibold,
-    fontSize: fontSizes.xs,
-    color: colors.textOnPrimary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+  labelText: {
+    fontFamily: fonts.bold,
+    fontSize: 6,
+    color: '#1A1A1A',
   },
-  date: {
-    fontFamily: fonts.light,
-    fontSize: 9,
-    color: 'rgba(255,255,255,0.7)',
-    marginTop: 1,
-  },
-  shine: {
+  seal: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '50%',
-    height: '50%',
-    borderTopLeftRadius: 4,
+    bottom: -1,
+    right: -1,
+    zIndex: 11,
+  },
+  sealIcon: {
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
 });
 

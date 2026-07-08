@@ -123,7 +123,7 @@ export const shadows = {
   },
 } as const;
 
-/** Dimensões das figurinhas do álbum (proporção Panini 68×98mm → ratio 3:4) */
+/** Dimensões das figurinhas do álbum (grade 5 colunas × 20 linhas = 100 slots) */
 export const stickerDimensions = {
   /** Aspect ratio real de figurinha Panini */
   aspectRatio: 3 / 4,
@@ -132,15 +132,15 @@ export const stickerDimensions = {
   /** Altura em mm para impressão */
   printHeightMm: 98,
   /** Colunas por página do álbum */
-  columns: 2,
+  columns: 5,
   /** Linhas por página do álbum */
-  rows: 3,
-  /** Total de slots por página */
-  perPage: 6,
+  rows: 20,
+  /** Total de slots no álbum */
+  perPage: 100,
   /** Gap entre figurinhas */
-  gap: 12,
+  gap: 6,
   /** Padding da página */
-  pagePadding: 20,
+  pagePadding: 10,
 } as const;
 
 export const theme = {

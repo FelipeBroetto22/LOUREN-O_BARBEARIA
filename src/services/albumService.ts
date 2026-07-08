@@ -66,34 +66,23 @@ export async function removeSticker(stickerId: string): Promise<void> {
   if (error) throw error;
 }
 
-/** Organizar figurinhas em páginas do álbum */
+/** Organizar figurinhas em grade de 100 posições do álbum */
 export function organizeIntoPages(stickers: AlbumSticker[]): AlbumPageData[] {
-  const { perPage } = stickerDimensions;
+  const totalSlots = 100;
+  const slots: AlbumSlot[] = [];
 
-  // Calcular total de páginas necessárias (mínimo 1)
-  const totalStickers = stickers.length;
-  const totalPages = Math.max(1, Math.ceil((totalStickers + 1) / perPage)); // +1 para próximo slot vazio
+  for (let i = 0; i < totalSlots; i++) {
+    const stickerNumber = i + 1;
+    const sticker = stickers.find((s) => s.sticker_number === stickerNumber) || null;
 
-  const pages: AlbumPageData[] = [];
-
-  for (let page = 1; page <= totalPages; page++) {
-    const slots: AlbumSlot[] = [];
-
-    for (let slot = 0; slot < perPage; slot++) {
-      const stickerIndex = (page - 1) * perPage + slot;
-      const sticker = stickers.find((s) => s.sticker_number === stickerIndex + 1) || null;
-
-      slots.push({
-        slotIndex: stickerIndex,
-        pageNumber: page,
-        sticker,
-      });
-    }
-
-    pages.push({ pageNumber: page, slots });
+    slots.push({
+      slotIndex: i,
+      pageNumber: 1,
+      sticker,
+    });
   }
 
-  return pages;
+  return [{ pageNumber: 1, slots }];
 }
 
 /** Contar total de figurinhas do usuário */

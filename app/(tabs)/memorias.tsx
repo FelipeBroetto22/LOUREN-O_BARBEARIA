@@ -118,7 +118,8 @@ export default function MemoriasScreen({ navigation }: any) {
 
       Alert.alert('Figurinha colada! 🎉', `Figurinha #${newSticker.sticker_number} adicionada ao seu álbum!`);
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Falha ao adicionar figurinha.');
+      const errorMsg = error?.message || JSON.stringify(error);
+      Alert.alert('Erro no Álbum', `Falha ao adicionar figurinha:\\n${errorMsg}`);
     } finally {
       setIsUploading(false);
     }
@@ -175,19 +176,7 @@ export default function MemoriasScreen({ navigation }: any) {
         onRefresh={onRefresh}
       />
 
-      {/* FAB — Colar Figurinha */}
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={handleOpenAddMenu}
-        activeOpacity={0.85}
-      >
-        <LinearGradient
-          colors={[colors.accent, colors.accentLight]}
-          style={styles.fabGradient}
-        >
-          <Ionicons name="add" size={28} color={colors.textOnAccent} />
-        </LinearGradient>
-      </TouchableOpacity>
+
 
       {/* Modal — Adicionar Figurinha */}
       <Modal
@@ -306,20 +295,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  // FAB
-  fab: {
-    position: 'absolute',
-    bottom: 100,
-    right: spacing.lg,
-    ...shadows.lg,
-  },
-  fabGradient: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
 
   // Modal
   modalContainer: {

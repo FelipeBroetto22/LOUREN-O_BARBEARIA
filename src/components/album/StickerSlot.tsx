@@ -1,9 +1,9 @@
 /**
- * StickerSlot — Slot vazio do álbum (com monograma em opacidade baixa)
- * Estilo de figurinha "por colar" do álbum da Copa.
+ * StickerSlot — Slot vazio do álbum
  */
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import {
   colors,
   fonts,
@@ -18,33 +18,41 @@ interface StickerSlotProps {
 }
 
 export default function StickerSlot({ slotNumber, onPress }: StickerSlotProps) {
+  const isActionable = !!onPress;
+
   return (
     <TouchableOpacity
       activeOpacity={0.7}
       onPress={onPress}
       style={styles.container}
-      disabled={!onPress}
+      disabled={!isActionable}
     >
-      <View style={styles.slot}>
-        {/* Monograma em opacidade baixa */}
-        <Image
-          source={require('../../../assets/images/logo-icon.png')}
-          style={styles.watermark}
-          resizeMode="contain"
-        />
+      <View style={[styles.slot, isActionable && styles.slotActionable]}>
+        {/* Número do slot no topo direito */}
+        <Text style={styles.numberText}>
+          {String(slotNumber).padStart(2, '0')}
+        </Text>
 
-        {/* Número do slot */}
-        <View style={styles.numberContainer}>
-          <Text style={styles.numberText}>
-            #{String(slotNumber).padStart(2, '0')}
-          </Text>
+        {isActionable ? (
+          <View style={styles.centerAction}>
+            <Ionicons name="add" size={20} color={colors.accent} />
+            <Text style={styles.addText}>ADICIONAR</Text>
+            <Text style={styles.addText}>FOTO</Text>
+          </View>
+        ) : (
+          <Image
+            source={require('../../../assets/images/logo-icon.png')}
+            style={styles.watermark}
+            resizeMode="contain"
+          />
+        )}
+
+        {/* Pilula "SEM FOTO" na base */}
+        <View style={styles.pillContainer}>
+          <View style={styles.pill}>
+            <Text style={styles.pillText}>SEM FOTO</Text>
+          </View>
         </View>
-
-        {/* Interrogação central */}
-        <Text style={styles.questionMark}>?</Text>
-
-        {/* Texto "por colar" */}
-        <Text style={styles.emptyText}>POR COLAR</Text>
       </View>
     </TouchableOpacity>
   );
@@ -58,50 +66,61 @@ const styles = StyleSheet.create({
   },
   slot: {
     flex: 1,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: colors.slotBorder,
-    borderStyle: 'dashed',
-    backgroundColor: colors.slotEmpty,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#D4C5A9', // Cor borda do slot vazio
+    backgroundColor: '#F9F7F3',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+  },
+  slotActionable: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E8E4DE',
+    borderStyle: 'solid',
   },
   watermark: {
     position: 'absolute',
     width: '60%',
     height: '60%',
-    opacity: 0.06,
-    tintColor: colors.primary,
-  },
-  numberContainer: {
-    position: 'absolute',
-    top: 6,
-    left: 6,
-    backgroundColor: 'rgba(13, 44, 104, 0.08)',
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    opacity: 0.1,
+    tintColor: '#D4C5A9', // Cor do logo no fundo
   },
   numberText: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
     fontFamily: fonts.bold,
-    fontSize: fontSizes.xs,
+    fontSize: 9,
     color: colors.primary,
-    opacity: 0.3,
-    letterSpacing: 0.5,
   },
-  questionMark: {
+  centerAction: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -8, // Compensate for pill
+  },
+  addText: {
     fontFamily: fonts.bold,
-    fontSize: 36,
-    color: colors.primary,
-    opacity: 0.1,
+    fontSize: 7,
+    color: colors.accent,
+    textAlign: 'center',
+    marginTop: 1,
   },
-  emptyText: {
-    fontFamily: fonts.semibold,
-    fontSize: 8,
-    color: colors.primary,
-    opacity: 0.2,
-    letterSpacing: 2,
-    marginTop: 4,
+  pillContainer: {
+    position: 'absolute',
+    bottom: 6,
+    width: '100%',
+    alignItems: 'center',
+  },
+  pill: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  pillText: {
+    fontFamily: fonts.bold,
+    fontSize: 7,
+    color: colors.surface,
   },
 });

@@ -11,6 +11,7 @@ export interface Database {
           full_name: string;
           phone: string | null;
           avatar_url: string | null;
+          role: 'client' | 'barber';
           created_at: string;
         };
         Insert: {
@@ -18,6 +19,7 @@ export interface Database {
           full_name: string;
           phone?: string | null;
           avatar_url?: string | null;
+          role?: 'client' | 'barber';
           created_at?: string;
         };
         Update: {
@@ -25,6 +27,7 @@ export interface Database {
           full_name?: string;
           phone?: string | null;
           avatar_url?: string | null;
+          role?: 'client' | 'barber';
         };
       };
       services: {
@@ -57,6 +60,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
+          barber_id: string | null;
           service_id: string;
           scheduled_at: string;
           status: 'confirmed' | 'completed' | 'cancelled';
@@ -66,12 +70,14 @@ export interface Database {
         Insert: {
           id?: string;
           user_id: string;
+          barber_id?: string | null;
           service_id: string;
           scheduled_at: string;
           status?: 'confirmed' | 'completed' | 'cancelled';
           notes?: string | null;
         };
         Update: {
+          barber_id?: string | null;
           service_id?: string;
           scheduled_at?: string;
           status?: 'confirmed' | 'completed' | 'cancelled';

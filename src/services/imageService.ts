@@ -1,48 +1,36 @@
 /**
- * Image Service — Compressão WebP client-side + upload para Cloudflare R2
+ * Image Service — Compressão WebP client-side + Base64
+ * (Modificado para usar Base64 para garantir funcionamento sem setup de infraestrutura externa)
  */
 import * as ImageManipulator from 'expo-image-manipulator';
-import { getPresignedUploadUrl, uploadToR2, getPublicUrl } from '../config/r2';
 
 /**
- * Comprime a imagem para WebP no dispositivo (max 800px largura, quality 0.7)
- * e faz upload ao Cloudflare R2.
- * 
- * @param imageUri - URI local da imagem (do image picker)
- * @param userId - ID do usuário para organizar pastas no R2
- * @returns URL pública final da imagem no R2
+ * Comprime a imagem para WebP no dispositivo e retorna como string Base64.
+ * Ideal para um MVP sem configurar buckets externos.
  */
 export async function compressAndUpload(
   imageUri: string,
   userId: string
 ): Promise<string> {
-  // 1. Comprimir para WebP (ou JPEG como fallback em iOS)
   const compressed = await ImageManipulator.manipulateAsync(
     imageUri,
-    [{ resize: { width: 800 } }],
+    [{ resize: { width: 600 } }], // Tamanho reduzido para n pesar o banco
     {
-      compress: 0.7,
-      format: ImageManipulator.SaveFormat.WEBP,
+      compress: 0.6,
+      format: ImageManipulator.SaveFormat.JPEG,
+      base64: true,
     }
   );
 
-  // 2. Gerar nome único do arquivo
-  const timestamp = Date.now();
-  const randomSuffix = Math.random().toString(36).substring(2, 8);
-  const fileName = `albums/${userId}/${timestamp}_${randomSuffix}.webp`;
+  if (!compressed.base64) {
+    throw new Error('Falha ao gerar Base64 da imagem');
+  }
 
-  // 3. Obter presigned URL do Supabase Edge Function
-  const presignedUrl = await getPresignedUploadUrl(fileName, 'image/webp');
-
-  // 4. Fazer upload direto ao R2
-  await uploadToR2(presignedUrl, compressed.uri, 'image/webp');
-
-  // 5. Retornar URL pública
-  return getPublicUrl(fileName);
+  return `data:image/jpeg;base64,${compressed.base64}`;
 }
 
 /**
- * Comprime imagem para avatar do perfil (max 400px) e faz upload ao R2.
+ * Comprime imagem para avatar do perfil e retorna Base64.
  */
 export async function uploadAvatar(
   imageUri: string,
@@ -51,15 +39,18 @@ export async function uploadAvatar(
   const compressed = await ImageManipulator.manipulateAsync(
     imageUri,
     [{ resize: { width: 400 } }],
-    { compress: 0.8, format: ImageManipulator.SaveFormat.WEBP }
+    {
+      compress: 0.6,
+      format: ImageManipulator.SaveFormat.JPEG,
+      base64: true,
+    }
   );
 
-  const fileName = `avatars/${userId}/avatar_${Date.now()}.webp`;
+  if (!compressed.base64) {
+    throw new Error('Falha ao gerar Base64 do avatar');
+  }
 
-  const presignedUrl = await getPresignedUploadUrl(fileName, 'image/webp');
-  await uploadToR2(presignedUrl, compressed.uri, 'image/webp');
-
-  return getPublicUrl(fileName);
+  return `data:image/jpeg;base64,${compressed.base64}`;
 }
 
 /**
@@ -74,7 +65,7 @@ export async function compressImage(
     [{ resize: { width: maxWidth } }],
     {
       compress: 0.8,
-      format: ImageManipulator.SaveFormat.WEBP,
+      format: ImageManipulator.SaveFormat.JPEG,
     }
   );
 

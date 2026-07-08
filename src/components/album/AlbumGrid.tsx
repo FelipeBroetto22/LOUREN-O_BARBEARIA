@@ -1,18 +1,17 @@
 /**
- * AlbumGrid — Grade do álbum com paginação horizontal (estilo virar página)
- * Cada página tem 6 slots (2 colunas × 3 linhas) no estilo álbum de figurinhas da Copa.
+ * AlbumGrid — Grade do álbum (estilo scroll vertical)
+ * Grade de 5 colunas com 100 slots totais.
  */
-import React, { useRef, useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   ScrollView,
   StyleSheet,
-  Dimensions,
   Image,
   RefreshControl,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import StickerCard from './StickerCard';
 import StickerSlot from './StickerSlot';
 import {
@@ -25,8 +24,6 @@ import {
 } from '../../config/theme';
 import type { AlbumPageData } from '../../types/album';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
 interface AlbumGridProps {
   pages: AlbumPageData[];
   userName: string;
@@ -38,61 +35,34 @@ interface AlbumGridProps {
 
 export default function AlbumGrid({
   pages,
-  userName,
   totalStickers,
   onAddSticker,
   refreshing = false,
   onRefresh,
 }: AlbumGridProps) {
-  const scrollRef = useRef<ScrollView>(null);
-  const [currentPage, setCurrentPage] = useState(0);
+  // Como agora é uma página única, pegamos os slots da primeira página
+  const slots = pages[0]?.slots || [];
 
-  const handleScroll = (event: any) => {
-    const offsetX = event.nativeEvent.contentOffset.x;
-    const page = Math.round(offsetX / SCREEN_WIDTH);
-    setCurrentPage(page);
-  };
+  // Calcular progresso
+  const totalSlots = 100;
+  const progressPercent = (totalStickers / totalSlots) * 100;
 
   return (
     <View style={styles.container}>
-      {/* Capa do Álbum (Header) */}
-      <View style={styles.albumHeader}>
-        <LinearGradient
-          colors={[colors.primary, colors.primaryDark]}
-          style={styles.albumHeaderGradient}
-        >
-          <Image
-            source={require('../../../assets/images/logo-icon.png')}
-            style={styles.albumLogo}
-            resizeMode="contain"
-          />
-          <Text style={styles.albumTitle}>ÁLBUM DE MEMÓRIAS</Text>
-          <Text style={styles.albumSubtitle}>LOURENÇO BARBEARIA</Text>
-          <View style={styles.albumStats}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{totalStickers}</Text>
-              <Text style={styles.statLabel}>FIGURINHAS</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{pages.length}</Text>
-              <Text style={styles.statLabel}>PÁGINAS</Text>
-            </View>
-          </View>
-          <Text style={styles.ownerName}>{userName.toUpperCase()}</Text>
-        </LinearGradient>
+      {/* Header Fixo Azul */}
+      <View style={styles.header}>
+        <Ionicons name="menu" size={28} color="#fff" style={styles.menuIcon} />
+        <Image
+          source={require('../../../assets/images/logo-icon.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+        <Text style={styles.title}>ÁLBUM DE MEMÓRIAS</Text>
       </View>
 
-      {/* Páginas do Álbum (scroll horizontal paginado) */}
       <ScrollView
-        ref={scrollRef}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        decelerationRate="fast"
-        style={styles.pagesScroll}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
         refreshControl={
           onRefresh ? (
             <RefreshControl
@@ -103,48 +73,49 @@ export default function AlbumGrid({
           ) : undefined
         }
       >
-        {pages.map((page) => (
-          <View key={page.pageNumber} style={styles.page}>
-            {/* Número da página */}
-            <View style={styles.pageHeader}>
-              <View style={styles.pageNumberLine} />
-              <Text style={styles.pageNumber}>
-                PÁGINA {String(page.pageNumber).padStart(2, '0')}
-              </Text>
-              <View style={styles.pageNumberLine} />
-            </View>
-
-            {/* Grade de figurinhas 2×3 */}
-            <View style={styles.stickerGrid}>
-              {page.slots.map((slot) => (
-                <View key={slot.slotIndex} style={styles.slotWrapper}>
-                  {slot.sticker ? (
-                    <StickerCard sticker={slot.sticker} />
-                  ) : (
-                    <StickerSlot
-                      slotNumber={slot.slotIndex + 1}
-                      onPress={onAddSticker}
-                    />
-                  )}
-                </View>
-              ))}
+        {/* Card de Progresso */}
+        <View style={styles.progressCard}>
+          <View style={styles.progressHeader}>
+            <Text style={styles.progressText}>
+              <Text style={styles.progressLabel}>COLECIONADOS: </Text>
+              <Text style={styles.progressValue}>{totalStickers}</Text>
+              <Text style={styles.progressTotal}> / {totalSlots}</Text>
+            </Text>
+            <View style={styles.newBadge}>
+              <Ionicons name="alert-circle" size={14} color={colors.accent} />
+              <Text style={styles.newBadgeText}> Novas Figurinhas</Text>
             </View>
           </View>
-        ))}
-      </ScrollView>
 
-      {/* Indicador de páginas (dots) */}
-      <View style={styles.pagination}>
-        {pages.map((_, index) => (
-          <View
-            key={index}
-            style={[
-              styles.dot,
-              currentPage === index && styles.dotActive,
-            ]}
-          />
-        ))}
-      </View>
+          <View style={styles.progressBarBg}>
+            <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
+          </View>
+        </View>
+
+        {/* Grade de Figurinhas */}
+        <View style={styles.gridContainer}>
+          <View style={styles.grid}>
+            {slots.map((slot) => (
+              <View key={slot.slotIndex}>
+                {slot.sticker ? (
+                  <StickerCard sticker={slot.sticker} />
+                ) : (
+                  <StickerSlot
+                    slotNumber={slot.slotIndex + 1}
+                    // Apenas permitir adicionar na próxima figurinha vazia (a primeira disponível)
+                    // Mas para simplificar, se onAddSticker foi passado, o botão pode ser a primeira vazia
+                    onPress={
+                      onAddSticker && slot.slotIndex === totalStickers
+                        ? onAddSticker
+                        : undefined
+                    }
+                  />
+                )}
+              </View>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -152,132 +123,96 @@ export default function AlbumGrid({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.albumBg,
+    backgroundColor: colors.primary, // Fundo atrás do scroll é azul
   },
-  // Album Header (Capa)
-  albumHeader: {
-    marginHorizontal: spacing.md,
-    marginTop: spacing.md,
-    borderRadius: 16,
-    overflow: 'hidden',
-    ...shadows.lg,
-  },
-  albumHeaderGradient: {
-    paddingVertical: spacing.xl,
-    paddingHorizontal: spacing.lg,
+  header: {
     alignItems: 'center',
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.sm,
+    backgroundColor: colors.primary,
   },
-  albumLogo: {
-    width: 56,
-    height: 56,
-    tintColor: 'rgba(255,255,255,0.9)',
-    marginBottom: spacing.sm,
+  menuIcon: {
+    position: 'absolute',
+    left: spacing.md,
+    top: spacing.xl + 10,
   },
-  albumTitle: {
-    fontFamily: fonts.bold,
-    fontSize: fontSizes['2xl'],
-    color: colors.textOnPrimary,
-    letterSpacing: 3,
-    textAlign: 'center',
+  logo: {
+    width: 60,
+    height: 60,
+    tintColor: '#D4C5A9', // Cor dourada do logo
   },
-  albumSubtitle: {
-    fontFamily: fonts.light,
-    fontSize: fontSizes.xs,
-    color: 'rgba(255,255,255,0.6)',
-    letterSpacing: 4,
-    marginTop: 2,
-  },
-  albumStats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.md,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 8,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-  },
-  statItem: {
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-  },
-  statNumber: {
+  title: {
     fontFamily: fonts.bold,
     fontSize: fontSizes.xl,
-    color: colors.textOnPrimary,
+    color: '#D4C5A9',
+    marginTop: spacing.xs,
+    letterSpacing: 1,
   },
-  statLabel: {
-    fontFamily: fonts.light,
-    fontSize: 8,
-    color: 'rgba(255,255,255,0.5)',
-    letterSpacing: 1.5,
-    marginTop: 2,
-  },
-  statDivider: {
-    width: 1,
-    height: 28,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-  ownerName: {
-    fontFamily: fonts.semibold,
-    fontSize: fontSizes.sm,
-    color: 'rgba(255,255,255,0.5)',
-    letterSpacing: 3,
-    marginTop: spacing.md,
-  },
-  // Pages
-  pagesScroll: {
-    flex: 1,
-    marginTop: spacing.md,
-  },
-  page: {
-    width: SCREEN_WIDTH,
+  scrollContent: {
+    backgroundColor: '#FAF7F2', // Fundo creme do álbum
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
     paddingHorizontal: stickerDimensions.pagePadding,
+    paddingTop: spacing.md,
+    paddingBottom: spacing['2xl'],
+    minHeight: '100%', // Preenche a tela
   },
-  pageHeader: {
+  progressCard: {
+    backgroundColor: '#F3EFE7', // Fundo do card
+    borderRadius: 8,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: '#D4C5A9',
+    marginBottom: spacing.lg,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  progressText: {
+    fontFamily: fonts.bold,
+    fontSize: fontSizes.sm,
+  },
+  progressLabel: {
+    color: '#1A1A1A',
+  },
+  progressValue: {
+    color: colors.accent,
+  },
+  progressTotal: {
+    color: '#6B7280',
+  },
+  newBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.md,
-    paddingHorizontal: spacing.xs,
   },
-  pageNumberLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.stickerBorder,
-    opacity: 0.5,
-  },
-  pageNumber: {
-    fontFamily: fonts.semibold,
+  newBadgeText: {
+    fontFamily: fonts.medium,
     fontSize: fontSizes.xs,
-    color: colors.primary,
-    opacity: 0.3,
-    letterSpacing: 2,
-    marginHorizontal: spacing.md,
+    color: colors.accent,
   },
-  stickerGrid: {
+  progressBarBg: {
+    height: 8,
+    backgroundColor: '#E8E4DE',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: colors.primary,
+    borderTopRightRadius: 4,
+    borderBottomRightRadius: 4,
+    borderRightWidth: 2,
+    borderRightColor: colors.accent, // Detalhe vermelho na ponta da barra
+  },
+  gridContainer: {
+    backgroundColor: '#FAF7F2',
+  },
+  grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  slotWrapper: {
-    width: '48%',
-  },
-  // Pagination Dots
-  pagination: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    gap: 8,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.stickerBorder,
-  },
-  dotActive: {
-    width: 24,
-    backgroundColor: colors.primary,
-    borderRadius: 4,
+    gap: stickerDimensions.gap,
   },
 });

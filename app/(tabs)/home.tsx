@@ -152,52 +152,7 @@ export default function HomeScreen({ navigation }: any) {
           </LinearGradient>
         </Card>
 
-        {/* Atalhos rápidos */}
-        <Text style={styles.sectionTitle}>ATALHOS</Text>
-        <View style={styles.shortcuts}>
-          <TouchableOpacity
-            style={styles.shortcutItem}
-            onPress={() => navigation.navigate('Agendar')}
-          >
-            <LinearGradient
-              colors={[colors.primary, colors.primaryLight]}
-              style={styles.shortcutIcon}
-            >
-              <Ionicons name="cut" size={24} color={colors.textOnPrimary} />
-            </LinearGradient>
-            <Text style={styles.shortcutLabel}>AGENDAR</Text>
-          </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.shortcutItem}
-            onPress={() => navigation.navigate('Memórias')}
-          >
-            <LinearGradient
-              colors={[colors.accent, colors.accentLight]}
-              style={styles.shortcutIcon}
-            >
-              <Ionicons name="albums" size={24} color={colors.textOnAccent} />
-            </LinearGradient>
-            <Text style={styles.shortcutLabel}>ÁLBUM</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.shortcutItem}
-            onPress={() => navigation.navigate('Historico')}
-          >
-            <View style={[styles.shortcutIcon, { backgroundColor: colors.success }]}>
-              <Ionicons name="time" size={24} color={colors.textOnAccent} />
-            </View>
-            <Text style={styles.shortcutLabel}>HISTÓRICO</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.shortcutItem} onPress={handleOpenMaps}>
-            <View style={[styles.shortcutIcon, { backgroundColor: colors.warning }]}>
-              <Ionicons name="location" size={24} color={colors.textOnAccent} />
-            </View>
-            <Text style={styles.shortcutLabel}>LOCAL</Text>
-          </TouchableOpacity>
-        </View>
 
         {/* Seção Último Corte (preview do álbum) */}
         <Text style={styles.sectionTitle}>ÚLTIMO CORTE</Text>
@@ -389,31 +344,6 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     marginBottom: spacing.md,
     marginTop: spacing.sm,
-  },
-  // Shortcuts
-  shortcuts: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.xl,
-  },
-  shortcutItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  shortcutIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: borderRadius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.xs,
-    ...shadows.md,
-  },
-  shortcutLabel: {
-    fontFamily: fonts.semibold,
-    fontSize: 9,
-    color: colors.textSecondary,
-    letterSpacing: 1,
   },
   // Last Cut
   lastCutCard: {

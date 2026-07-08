@@ -83,7 +83,7 @@ export default function RegisterScreen({ navigation }: any) {
         {/* Header */}
         <View style={styles.header}>
           <Image
-            source={require('../../assets/images/logo-icon.png')}
+            source={require('../../assets/images/logo-full.png')}
             style={styles.logo}
             resizeMode="contain"
           />
@@ -96,16 +96,6 @@ export default function RegisterScreen({ navigation }: any) {
         {/* Formulário */}
         <View style={styles.form}>
           <Input
-            label="Nome Completo"
-            icon="person-outline"
-            placeholder="Seu nome completo"
-            autoCapitalize="words"
-            value={fullName}
-            onChangeText={setFullName}
-            error={errors.fullName}
-          />
-
-          <Input
             label="Email"
             icon="mail-outline"
             placeholder="seu@email.com"
@@ -114,15 +104,6 @@ export default function RegisterScreen({ navigation }: any) {
             value={email}
             onChangeText={setEmail}
             error={errors.email}
-          />
-
-          <Input
-            label="Telefone (opcional)"
-            icon="call-outline"
-            placeholder="(11) 99999-9999"
-            keyboardType="phone-pad"
-            value={phone}
-            onChangeText={setPhone}
           />
 
           <Input
@@ -143,6 +124,25 @@ export default function RegisterScreen({ navigation }: any) {
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             error={errors.confirmPassword}
+          />
+
+          <Input
+            label="Nome Completo"
+            icon="person-outline"
+            placeholder="Seu nome completo"
+            autoCapitalize="words"
+            value={fullName}
+            onChangeText={setFullName}
+            error={errors.fullName}
+          />
+
+          <Input
+            label="Número de Telefone"
+            icon="call-outline"
+            placeholder="(11) 99999-9999"
+            keyboardType="phone-pad"
+            value={phone}
+            onChangeText={setPhone}
           />
 
           <Button
@@ -194,10 +194,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   logo: {
-    width: 60,
-    height: 60,
-    tintColor: colors.primary,
-    marginBottom: spacing.md,
+    width: 150,
+    height: 120,
+    marginBottom: spacing.sm,
   },
   title: {
     fontFamily: fonts.bold,
