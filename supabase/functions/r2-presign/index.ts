@@ -16,17 +16,37 @@ serve(async (req) => {
   try {
     const { fileName, contentType } = await req.json();
 
+    if (!fileName || !contentType) {
+      return new Response(
+        JSON.stringify({ error: 'fileName e contentType são obrigatórios' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+
+    const endpoint = Deno.env.get('R2_ENDPOINT');
+    const accessKeyId = Deno.env.get('R2_ACCESS_KEY_ID');
+    const secretAccessKey = Deno.env.get('R2_SECRET_ACCESS_KEY');
+    const bucketName = Deno.env.get('R2_BUCKET_NAME') || 'lourencobarbearia';
+
+    if (!endpoint || !accessKeyId || !secretAccessKey) {
+      console.error('Secrets R2 não configurados:', { endpoint: !!endpoint, accessKeyId: !!accessKeyId, secretAccessKey: !!secretAccessKey });
+      return new Response(
+        JSON.stringify({ error: 'Secrets do R2 não configurados. Configure R2_ENDPOINT, R2_ACCESS_KEY_ID e R2_SECRET_ACCESS_KEY.' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
+    }
+
     const s3Client = new S3Client({
       region: 'auto',
-      endpoint: Deno.env.get('R2_ENDPOINT'),
+      endpoint,
       credentials: {
-        accessKeyId: Deno.env.get('R2_ACCESS_KEY_ID') || '',
-        secretAccessKey: Deno.env.get('R2_SECRET_ACCESS_KEY') || '',
+        accessKeyId,
+        secretAccessKey,
       },
     });
 
     const command = new PutObjectCommand({
-      Bucket: Deno.env.get('R2_BUCKET_NAME'),
+      Bucket: bucketName,
       Key: fileName,
       ContentType: contentType,
     });
@@ -38,6 +58,7 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error: any) {
+    console.error('Erro na Edge Function r2-presign:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
